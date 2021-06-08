@@ -31,8 +31,8 @@
   2x 1k resitors
 
   1x 4 button remote control
-
-  .................................................................................................................
+  
+    .................................................................................................................
   . Wiring (also see: schematic.jpg and/or pcb.jpg)                                                               .
   .                                                                                                               .
   .               Btn   Btn   R1    R2    R3    R4    R5    R6    R7    Blue   Blue   Blue   Blue   Green   Red   .
@@ -60,6 +60,8 @@
   .................................................................................................................
 
   PCB: https://oshwlab.com/RobLatour/bluekeyremote
+  
+  3D Printed enclosure model and stl: https://www.thingiverse.com/thing:4881425
 
   To clear prior pairing codes in the remote
 
