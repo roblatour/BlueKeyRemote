@@ -529,7 +529,7 @@ String ConvertStringReducingExtendedKeyCodes(String input) {
 
   input = CorrectCaseOnExtendedKeyCodes(input);
 
-  input = SimplifyW10Macros(input);
+  input = SimplifyMacrosAndWindow10Commands(input);
 
   if (input.indexOf("{") >= 0)  // if there are no "{"s in the input string, then there are no Extended Key Codes in it and no further processing is needed
   {
@@ -822,7 +822,7 @@ void SetupEEPROM(bool ResetRequired) {
 
 //******************************************************************************************************************************************************************
 
-String SimplifyW10Macros(String input) {
+String SimplifyMacrosAndWindow10Commands(String input) {
 
   input.replace(MACRO_1, "{MACRO_1}");
   input.replace(MACRO_2, "{MACRO_2}");
@@ -853,7 +853,7 @@ String ConvertForWebDisplay(String input) {
   input.replace(String(char(169)), "&copy;");
   input.replace(String(char(174)), "&reg;");
 
-  input = SimplifyW10Macros(input);
+  input = SimplifyMacrosAndWindow10Commands(input);
 
   return input;
 
