@@ -1,2 +1,2 @@
-#define SECRET_WIFI_SSID             "Latour-24G"
-#define SECRET_WIFI_PASSWORD         "apple&banana"
+#define SECRET_WIFI_SSID             "****"
+#define SECRET_WIFI_PASSWORD         "****"
