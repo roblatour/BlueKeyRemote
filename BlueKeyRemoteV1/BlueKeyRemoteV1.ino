@@ -58,7 +58,7 @@
   .                                                           X                                     X             .
   .                                                                 X                                       X     .
   .................................................................................................................
-  
+
   PCB: https://oshwlab.com/RobLatour/bluekeyremote
 
   To clear prior pairing codes in the remote
@@ -1289,12 +1289,27 @@ void TypeText(String text) {
   //       if bluetooth is not connected the key is not sent but no error is thrown, rather the routine proceeds as if it were sent
   //       this is by design
 
-  text.replace("{MACRO_1}", MACRO_1);
-  text.replace("{MACRO_2}", MACRO_2);
-  text.replace("{MACRO_3}", MACRO_3);
-  text.replace("{MACRO_4}", MACRO_4);
+  if (The_Web_Interface_Is_Open) {
 
-  if (!The_Web_Interface_Is_Open) {
+    text.replace(MACRO_1, "{MACRO_1}");
+    text.replace(MACRO_2, "{MACRO_2}");
+    text.replace(MACRO_3, "{MACRO_3}");
+    text.replace(MACRO_4, "{MACRO_4}");
+
+    if (WORKING_WITH_WINDOWS10) {
+      text.replace(W10_LOCK_MACRO, "{LOCK}");
+      text.replace(W10_SLEEP_MACRO, "{SLEEP}");
+      text.replace( W10_SIGNOUT_MACRO, "{SIGNOUT}");
+      text.replace( W10_RESTART_MACRO, "{RESTART}");
+      text.replace(W10_SHUTDOWN_MACRO, "{SHUTDOWN}");
+    };
+
+  } else {
+
+    text.replace("{MACRO_1}", MACRO_1);
+    text.replace("{MACRO_2}", MACRO_2);
+    text.replace("{MACRO_3}", MACRO_3);
+    text.replace("{MACRO_4}", MACRO_4);
 
     // Send escape codes to be bluetooth keyed, for example send a carrage return rather than " / n"
 
