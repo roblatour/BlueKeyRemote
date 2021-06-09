@@ -66,31 +66,18 @@
   
   3D Printed enclosure model and stl: https://www.thingiverse.com/thing:4881425
 
-  To clear prior pairing codes in the remote
+    To pair a remote control, please follow these steps:
 
-    1. Press and hold the top two buttons until the light on the remote flashes quickly
-    2. While continuing to hold down the top button, release the second button
-    3. Press and release the second from the top button three times
-    4. The light on the remote will blink quickly to indicate success
-
-  To pair a remote control, please follow these steps:
-
-    However, first please note, that pairing a remote control will:
-     a. cause the previously paired remote and any clones of it to be unpaired, and
-     b. will reset the button values to their defaults
-
-    Having that noted, to pair a remote:
-     1. clear the remote of prior pairing codes (see section above)
-     2. press down the 'Pair Remote' button on the control board; the red LED will go on
-     3. continue to hold down the button for five seconds (the five seconds is used to prevent inadvertently triggering the pairing process)
-     4. after five seconds the red LED will turn off, you should then release the 'Pair Remote' button
+     1. press down the 'Pair Remote' button on the control board; the red LED will go on
+     2. continue to hold down the button for five seconds (the five seconds is used to prevent inadvertently triggering the pairing process)
+     3. after five seconds the red LED will turn off, you should then release the 'Pair Remote' button
         (if the 'Pair Remote' button is released before five seconds the red LED will go off and the pairing process will be cancelled)
-     5. after you have released the 'Pair Remote' button the red LED will automatically flash eight times as the 1527 is reprogrammed
-     6. there will be a short pause, and at this point the 1527 will be unpaired
-     7. the red LED will automatically flash one more time, and then it will flash quickly six times
-     8. finally press any button on the remote
-     9. on the control board a blue LED (corresponding to the button you pushed) will turn on, as will a blue LED on the ESP32, and the remote will be paired
-     10. once you see the blue LEDs turn on, release the button on the remote - you are done; the remote and all its buttons are paired
+     4. after you have released the 'Pair Remote' button the red LED will automatically flash eight times as the 1527 is reprogrammed
+     5. there will be a short pause, and at this point the 1527 will be unpaired
+     6. the red LED will automatically flash one more time, and then it will flash quickly six times
+     7. finally press any button on the remote
+     8. on the control board a blue LED (corresponding to the button you pushed) will turn on, as will a blue LED on the ESP32, and the remote will be paired
+     9. once you see the blue LEDs turn on, release the button on the remote - you are done; the remote and all its buttons are paired
 
   To setup the keys you want sent when you press a button on the remote
 
@@ -438,7 +425,7 @@ void VirtuallyPressAndReleaseThe1527ProgrammingButton(int NumberOfTimes) {
 
     digitalWrite(THE_1527_PROGRAMMING_PIN, HIGH); // virtually press the button down
 
-    FlashLED(LED_PAIR_REMOTE_PIN, 1, 1000);      // wait 1 second, and flash the LED in that time
+    FlashLED(LED_PAIR_REMOTE_PIN, 1, 1500);      // wait 1 second, and flash the LED in that time
 
     digitalWrite(THE_1527_PROGRAMMING_PIN, LOW);  // virtually release the button
 
