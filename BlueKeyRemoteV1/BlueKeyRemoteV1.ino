@@ -22,7 +22,7 @@
      board manager:  ESP32 Deve Module
     (recommended) Partition scheme: Huge APP (3MB no OTA/1MB SPIFFS)
 
-  1x 1527 reciever baord + 1 matching remote
+  1x 1527 receiver baord + 1 matching remote
      https://www.aliexpress.com/item/32852233124.html
 
   2x momentary switches
