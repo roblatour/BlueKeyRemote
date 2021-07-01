@@ -1,9 +1,11 @@
 /*
-  Blue Key Remote v1
+  Blue Key Remote v2
   Copyright, Rob Latour, 2021
   License: MIT
 
   This program lets a four button remote act as as a bluetooth keyboard
+
+  *** NOTE: Please compile with Arduino version 1.8.14 (and not an earlier or later version) ***
 
   Libraries:
       https://github.com/T-vK/ESP32-BLE-Keyboard
@@ -17,10 +19,10 @@
 
   1x ESP32
      physcal board:  ESP32 Devkit v1
-	 https://www.aliexpress.com/item/4000071762309.html
-	 
-     board manager:  ESP32 Deve Module
-    (recommended) Partition scheme: Huge APP (3MB no OTA/1MB SPIFFS)
+	   https://www.aliexpress.com/item/4000071762309.html
+
+     board manager:  ESP32 Dev Module
+     (recommended) Partition scheme: Huge APP (3MB no OTA/1MB SPIFFS)
 
   1x 1527 receiver baord + 1 matching remote
      https://www.aliexpress.com/item/32852233124.html
@@ -34,7 +36,7 @@
   2x 1k resitors
 
   1x 4 button remote control
-  
+
     .................................................................................................................
   . Wiring (also see: schematic.jpg and/or pcb.jpg)                                                               .
   .                                                                                                               .
@@ -63,7 +65,7 @@
   .................................................................................................................
 
   PCB: https://oshwlab.com/RobLatour/bluekeyremote
-  
+
   3D Printed enclosure model and stl: https://www.thingiverse.com/thing:4881425
 
     To pair a remote control, please follow these steps:
@@ -153,7 +155,6 @@ String IP_Address_of_this_client = "";
 
 WebServer server(80);
 
-
 // Wake On LAN stuff
 
 #include <WakeOnLan.h>
@@ -161,7 +162,6 @@ WiFiUDP UDP;
 WakeOnLan WOL(UDP);
 
 bool WOL_Request = false;
-
 
 // Misc stuff
 bool The_Web_Interface_Is_Open = false;
@@ -263,17 +263,40 @@ const String Extend_Key_Codes[] = {"{LEFT_CTRL}",
 
 int Number_Of_Extended_Key_Codes;  // automatically calculated in setup()
 
-
 //******************************************************************************************************************************************************************
 
-void SetupWOL() {
+void UpdateLED(int LEDPin, bool TurnOn) {
 
-  WOL.setRepeat(3, 100); // Optional, repeat the packet three times with 100ms between. WARNING delay() is used between send packet function.
-  WOL.calculateBroadcastAddress(WiFi.localIP(), WiFi.subnetMask()); // Optional  => To calculate the broadcast address, otherwise 255.255.255.255 is used (which is denied in some networks).
-  Serial.println("WOL has been setup");
-  Serial.println("");
+  if (TurnOn)
+    digitalWrite(LEDPin, HIGH);
+  else
+    digitalWrite(LEDPin, LOW);
 
 }
+
+void FlashLED(int LEDPin, int Times, int BlinkTime) {
+
+  // ensure the LED is off
+  UpdateLED(LEDPin, false);
+
+  int HalfBlinkTime = BlinkTime / 2;
+
+  // flash LED
+  for (int i = 1; i <= Times; i++) {
+
+    UpdateLED(LEDPin, true);
+
+    delay(HalfBlinkTime);
+
+    UpdateLED(LEDPin, false);
+
+    delay(HalfBlinkTime);
+
+  };
+
+}
+
+//******************************************************************************************************************************************************************
 
 void SendMagicPacket(String MAC_Address) {
 
@@ -283,6 +306,11 @@ void SendMagicPacket(String MAC_Address) {
   Serial.println("");
 
   if (SetupWiFi()) {
+
+    WOL.setRepeat(3, 100); // Optional, repeat the packet three times with 100ms between. WARNING delay() is used between send packet function.
+    WOL.calculateBroadcastAddress(WiFi.localIP(), WiFi.subnetMask()); // Optional  => To calculate the broadcast address, otherwise 255.255.255.255 is used (which is denied in some networks).
+    Serial.println("WOL has been setup");
+    Serial.println("");
 
     MAC_Address.toUpperCase();
 
@@ -318,6 +346,7 @@ bool SetupWiFi() {
     Serial.print("Attempting to connect to WiFi");
 
     WiFi.mode(WIFI_STA);
+    //WiFi.mode(WIFI_AP_STA);
     WiFi.begin(wifi_name, wifi_pass);
     delay(1000);
 
@@ -352,6 +381,7 @@ bool SetupWiFi() {
         WiFi.disconnect(true);
         delay(1000);
         WiFi.mode(WIFI_STA);
+        //WiFi.mode(WIFI_AP_STA);
         delay(1000);
 
       }
@@ -384,38 +414,7 @@ bool SetupWiFi() {
 
 };
 
-//******************************************************************************************************************************************************************
 
-void UpdateLED(int LEDPin, bool TurnOn) {
-
-  if (TurnOn)
-    digitalWrite(LEDPin, HIGH);
-  else
-    digitalWrite(LEDPin, LOW);
-
-}
-
-void FlashLED(int LEDPin, int Times, int BlinkTime) {
-
-  // ensure the LED is off
-  UpdateLED(LEDPin, false);
-
-  int HalfBlinkTime = BlinkTime / 2;
-
-  // flash LED
-  for (int i = 1; i <= Times; i++) {
-
-    UpdateLED(LEDPin, true);
-
-    delay(HalfBlinkTime);
-
-    UpdateLED(LEDPin, false);
-
-    delay(HalfBlinkTime);
-
-  };
-
-}
 
 //******************************************************************************************************************************************************************
 
@@ -853,56 +852,46 @@ String ConvertForWebDisplay(String input) {
 
 String UpdateHomePageWithCurrentButtonValues() {
 
-  const String index_html_string = R"rawliteral("
-<!DOCTYPE html>
-<html lang="en">
- <head>
-  <title>Blue Key Remote</title>
-  <style>
-  input[type=text] {
-   width: 100%;
-   padding: 12px 20px;
-   margin: 8px 0;
-   box-sizing: border-box;
-   border: 2px solid blue;
-   border-radius: 4px;
-   }
-  </style>
- </head>
- <body>
+  /*
+    const String index_html_string = R"rawliteral("
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <title>Blue Key Remote</title>
+    <style>
+    input[type=text] {
+     width: 100%;
+     padding: 12px 20px;
+     margin: 8px 0;
+     box-sizing: border-box;
+     border: 2px solid blue;
+     border-radius: 4px;
+     }
+    </style>
+    </head>
+    <body>
+    <h3>Blue Key Remote button setup</h3>
+    To update one or more values, overtype them and click 'Update'.<br><br>
+    <form name="DataForm" action="/get">
+     <label>btn*1</label><input type="text" name="IN1" placeholder="value*1" autofocus><br><br>
+     <label>btn*2</label><input type="text" name="IN2" placeholder="value*2"><br><br>
+     <label>btn*3</label><input type="text" name="IN3" placeholder="value*3"><br><br>
+     <label>btn*4</label><input type="text" name="IN4" placeholder="value*4"><br><br>
+     <input name="Update" type="submit" value="Update">&nbsp;&nbsp;
+     <input name="Cancel" type="submit" value="Cancel">
+    </form>
+    </body>
+    </html>
+    ")rawliteral";
 
-  <h3>Blue Key Remote button setup</h3>
-  
-  To update one or more values, overtype them and click 'Update'.<br><br>
-  
-  <form name="DataForm" action="/get">
-  
-   <label>btn*1</label>
-   <input type="text" name="IN1" placeholder="value*1" autofocus><br><br>
-   
-   <label>btn*2</label>
-   <input type="text" name="IN2" placeholder="value*2"><br><br>
-   
-   <label>btn*3</label>
-   <input type="text" name="IN3" placeholder="value*3"><br><br>
-   
-   <label>btn*4</label>
-   <input type="text" name="IN4" placeholder="value*4"><br><br>
-   
-   <input name="Update" type="submit" value="Update">
-   &nbsp;&nbsp;
-   <input name="Cancel" type="submit" value="Cancel">
-   
-  </form>
+  */
 
- </body>
-
-</html>
-")rawliteral";
+  const String index_html_string = "<!DOCTYPE html><html lang='en'><head><title>Blue Key Remote</title><style>input[type=text] {width: 100%;padding: 12px 20px;margin: 8px 0;box-sizing: border-box;border: 2px solid blue;border-radius: 4px;}</style></head><body><h3>Blue Key Remote button setup</h3>To update one or more values, overtype them and click 'Update'.<br><br><form name='DataForm' action='/get'><label>btn*1</label><input type='text' name='IN1' placeholder='value*1' autofocus><br><br>   <label>btn*2</label><input type='text' name='IN2' placeholder='value*2'><br><br><label>btn*3</label><input type='text' name='IN3' placeholder='value*3'><br><br><label>btn*4</label><input type='text' name='IN4' placeholder='value*4'><br><br><input name='Update' type='submit' value='Update'>&nbsp;&nbsp;   <input name='Cancel' type='submit' value='Cancel'></form></body></html>";
 
   String Return_value = index_html_string;
-  Return_value.remove(0, 2);                                           // trim opening quote and cr from raw literal
-  Return_value.remove(Return_value.length() - 2);                       // trim closing quote from raw literal
+
+  //Return_value.remove(0, 2);                                           // trim opening quote and cr from raw literal
+  //Return_value.remove(Return_value.length() - 2);                       // trim closing quote from raw literal
 
   Return_value.replace("btn*1", BUTTON_1_LABEL);
   Return_value.replace("btn*2", BUTTON_2_LABEL);
@@ -1061,13 +1050,11 @@ void HandleNotFound() {
 
 void LoadWebpage() {
 
-  The_Web_Interface_Is_Open = true;
+  server.on("/", HTTP_GET, []() {
 
-  String HomePage = UpdateHomePageWithCurrentButtonValues();
-
-  server.on("/", HTTP_GET, [HomePage]() {
     server.sendHeader("Connection", "close");
-    server.send(200, "text/html", HomePage.c_str());
+    server.send(200, "text/html", UpdateHomePageWithCurrentButtonValues());
+
   });
 
   server.on("/get", handleDataIn);
@@ -1399,7 +1386,7 @@ void TypeText(String text) {
 
       // build the MAC Address of the device to be woken; should be in the format AA:BB:CC:DD:EE:FF
 
-      const String Filter = ": 0123456789ABCDEFabcdef";
+      const String Filter = ":0123456789ABCDEFabcdef";
       String MAC_Address = "";
 
       for (int j = i; j <= len - 1; j++) {
@@ -1498,10 +1485,14 @@ void HandleRemoteButtonPressed() {
 
 void StartWebpageInterface() {
 
+  The_Web_Interface_Is_Open = false;
+
   if (SetupWiFi()) {
 
     // fast flash the LED six times to indicate a successful WiFi connection
     FlashLED(LED_UPDATE_BUTTONS_PIN, 6, 250);
+
+    LoadWebpage();
 
     // open the server address in a browser
 
@@ -1518,8 +1509,6 @@ void StartWebpageInterface() {
 
     // turn on the LED to indicate the program is awaiting a web page update
     UpdateLED(LED_UPDATE_BUTTONS_PIN, true);
-
-    LoadWebpage();
 
     // allows the user to press a button on the remote to have its current value keyed into any field on the web interface
     The_Web_Interface_Is_Open = true;
@@ -1619,7 +1608,7 @@ void HandlePairRemoteButtonPressed() {
 void SetupSerial() {
 
   Serial.begin(115200);
-  Serial.println("Blue Key Remote v1 starting");
+  Serial.println("Blue Key Remote v2 starting");
   Serial.println("Copyright, Rob Latour, 2021");
   Serial.println("");
 
@@ -1644,6 +1633,7 @@ void SetupESP32Pins() {
 
   pinMode(THE_1527_PROGRAMMING_PIN, OUTPUT);
   digitalWrite(THE_1527_PROGRAMMING_PIN, LOW);
+  
 }
 
 //******************************************************************************************************************************************************************
@@ -1653,8 +1643,6 @@ void setup() {
   SetupSerial();
 
   SetupEEPROM(false);
-
-  SetupWOL();
 
   SetupESP32Pins();
 
