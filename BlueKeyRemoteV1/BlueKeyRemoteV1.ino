@@ -1,5 +1,5 @@
 /*
-  Blue Key Remote v2
+  Blue Key Remote v2.1
   Copyright, Rob Latour, 2021
   License: MIT
 
@@ -327,6 +327,9 @@ void SendMagicPacket(String MAC_Address) {
     // Flash update buttons LED three times to indicate successful end of WOL process
     FlashLED(LED_UPDATE_BUTTONS_PIN, 3, 250);
 
+    delay(200);
+    ESP.restart();
+
   };
 
 }
@@ -345,8 +348,8 @@ bool SetupWiFi() {
 
     Serial.print("Attempting to connect to WiFi");
 
-    WiFi.mode(WIFI_STA);
-    //WiFi.mode(WIFI_AP_STA);
+    //WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_AP_STA);
     WiFi.begin(wifi_name, wifi_pass);
     delay(1000);
 
@@ -380,8 +383,8 @@ bool SetupWiFi() {
 
         WiFi.disconnect(true);
         delay(1000);
-        WiFi.mode(WIFI_STA);
-        //WiFi.mode(WIFI_AP_STA);
+        //WiFi.mode(WIFI_STA);
+        WiFi.mode(WIFI_AP_STA);
         delay(1000);
 
       }
@@ -787,7 +790,7 @@ void LoadFromEEPROM() {
   Button_4_text = FullyExpandedFromStorage(Button_4_text);
 
   Serial.println("Expanded button values:");
-  Serial.print(BUTTON_1_LABEL); Serial.print(": ");  Serial.println(Button_1_text);
+  Serial.print(BUTTON_1_LABEL); Serial.print(": "); Serial.println(Button_1_text);
   Serial.print(BUTTON_2_LABEL); Serial.print(": "); Serial.println(Button_2_text);
   Serial.print(BUTTON_3_LABEL); Serial.print(": "); Serial.println(Button_3_text);
   Serial.print(BUTTON_4_LABEL); Serial.print(": "); Serial.println(Button_4_text);
@@ -851,8 +854,7 @@ String ConvertForWebDisplay(String input) {
 };
 
 String UpdateHomePageWithCurrentButtonValues() {
-
-  /*
+ 
     const String index_html_string = R"rawliteral("
     <!DOCTYPE html>
     <html lang="en">
@@ -884,14 +886,10 @@ String UpdateHomePageWithCurrentButtonValues() {
     </html>
     ")rawliteral";
 
-  */
-
-  const String index_html_string = "<!DOCTYPE html><html lang='en'><head><title>Blue Key Remote</title><style>input[type=text] {width: 100%;padding: 12px 20px;margin: 8px 0;box-sizing: border-box;border: 2px solid blue;border-radius: 4px;}</style></head><body><h3>Blue Key Remote button setup</h3>To update one or more values, overtype them and click 'Update'.<br><br><form name='DataForm' action='/get'><label>btn*1</label><input type='text' name='IN1' placeholder='value*1' autofocus><br><br>   <label>btn*2</label><input type='text' name='IN2' placeholder='value*2'><br><br><label>btn*3</label><input type='text' name='IN3' placeholder='value*3'><br><br><label>btn*4</label><input type='text' name='IN4' placeholder='value*4'><br><br><input name='Update' type='submit' value='Update'>&nbsp;&nbsp;   <input name='Cancel' type='submit' value='Cancel'></form></body></html>";
-
   String Return_value = index_html_string;
 
-  //Return_value.remove(0, 2);                                           // trim opening quote and cr from raw literal
-  //Return_value.remove(Return_value.length() - 2);                       // trim closing quote from raw literal
+  Return_value.remove(0, 2);                                           // trim opening quote and cr from raw literal
+  Return_value.remove(Return_value.length() - 2);                      // trim closing quote from raw literal
 
   Return_value.replace("btn*1", BUTTON_1_LABEL);
   Return_value.replace("btn*2", BUTTON_2_LABEL);
@@ -902,6 +900,8 @@ String UpdateHomePageWithCurrentButtonValues() {
   Return_value.replace("value*2", ConvertForWebDisplay(Button_2_text));
   Return_value.replace("value*3", ConvertForWebDisplay(Button_3_text));
   Return_value.replace("value*4", ConvertForWebDisplay(Button_4_text));
+
+  Serial.println(Return_value);
 
   return Return_value;
 
@@ -1396,6 +1396,10 @@ void TypeText(String text) {
 
       if (MAC_Address.length() == 17)
         SendMagicPacket(MAC_Address);
+      else {
+        Serial.print("invalid MAC Address: ");
+        Serial.println(MAC_Address);
+      }
 
       i = len; // forces end of processing for this command
 
@@ -1493,7 +1497,10 @@ void StartWebpageInterface() {
     FlashLED(LED_UPDATE_BUTTONS_PIN, 6, 250);
 
     LoadWebpage();
-
+    delay(2);  
+    server.handleClient();
+    delay(2);  
+        
     // open the server address in a browser
 
     String Open_server_command = "";
@@ -1503,10 +1510,10 @@ void StartWebpageInterface() {
 
     Open_server_command.concat("http://");
     Open_server_command.concat(IP_Address_of_this_client);
-    Open_server_command.concat("{!1}{Enter}");
+    Open_server_command.concat("/{!1}{Enter}");
 
     TypeText(Open_server_command);
-
+    
     // turn on the LED to indicate the program is awaiting a web page update
     UpdateLED(LED_UPDATE_BUTTONS_PIN, true);
 
@@ -1608,7 +1615,7 @@ void HandlePairRemoteButtonPressed() {
 void SetupSerial() {
 
   Serial.begin(115200);
-  Serial.println("Blue Key Remote v2 starting");
+  Serial.println("Blue Key Remote v2.1 starting");
   Serial.println("Copyright, Rob Latour, 2021");
   Serial.println("");
 
@@ -1633,7 +1640,7 @@ void SetupESP32Pins() {
 
   pinMode(THE_1527_PROGRAMMING_PIN, OUTPUT);
   digitalWrite(THE_1527_PROGRAMMING_PIN, LOW);
-  
+
 }
 
 //******************************************************************************************************************************************************************
