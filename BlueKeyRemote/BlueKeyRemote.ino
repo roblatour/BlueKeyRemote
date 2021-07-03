@@ -1,15 +1,16 @@
 /*
-  Blue Key Remote v2.1
+  Blue Key Remote v2.2
   Copyright, Rob Latour, 2021
   License: MIT
 
   This program lets a four button remote act as as a bluetooth keyboard
 
-  *** NOTE: Please compile with Arduino version 1.8.14 (and not an earlier or later version) ***
-
   Libraries:
-      https://github.com/T-vK/ESP32-BLE-Keyboard
-      https://github.com/a7md0/WakeOnLan
+       https://github.com/a7md0/WakeOnLan
+       https://github.com/T-vK/ESP32-BLE-Keyboard
+
+       the patch described at the link below is required to the ESP32-BLE-Keyboard library:
+       https://github.com/T-vK/ESP32-BLE-Keyboard/pull/54
 
   Directly connected to the ESP32 are two control buttons:
     1. used to pair the remote control with a 1527 board
@@ -154,6 +155,7 @@ String IP_Address_of_this_client = "";
 // Webserver stuff
 
 WebServer server(80);
+String HomePage;
 
 // Wake On LAN stuff
 
@@ -296,6 +298,17 @@ void FlashLED(int LEDPin, int Times, int BlinkTime) {
 
 }
 
+
+void ToggleEndLEDSOnThenOff() {
+
+  UpdateLED(LED_UPDATE_BUTTONS_PIN, true);
+  UpdateLED(LED_PAIR_REMOTE_PIN, true);
+  delay(500);
+  UpdateLED(LED_UPDATE_BUTTONS_PIN, false);
+  UpdateLED(LED_PAIR_REMOTE_PIN, false);
+
+}
+
 //******************************************************************************************************************************************************************
 
 void SendMagicPacket(String MAC_Address) {
@@ -348,8 +361,8 @@ bool SetupWiFi() {
 
     Serial.print("Attempting to connect to WiFi");
 
-    //WiFi.mode(WIFI_STA);
-    WiFi.mode(WIFI_AP_STA);
+    WiFi.mode(WIFI_STA);
+    //WiFi.mode(WIFI_AP_STA);
     WiFi.begin(wifi_name, wifi_pass);
     delay(1000);
 
@@ -383,8 +396,8 @@ bool SetupWiFi() {
 
         WiFi.disconnect(true);
         delay(1000);
-        //WiFi.mode(WIFI_STA);
-        WiFi.mode(WIFI_AP_STA);
+        WiFi.mode(WIFI_STA);
+        //WiFi.mode(WIFI_AP_STA);
         delay(1000);
 
       }
@@ -853,9 +866,9 @@ String ConvertForWebDisplay(String input) {
 
 };
 
-String UpdateHomePageWithCurrentButtonValues() {
- 
-    const String index_html_string = R"rawliteral("
+void SetupHomePageWithCurrentButtonValues() {
+
+  String index_html_string = R"rawliteral("
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -886,24 +899,20 @@ String UpdateHomePageWithCurrentButtonValues() {
     </html>
     ")rawliteral";
 
-  String Return_value = index_html_string;
+  HomePage = index_html_string;
 
-  Return_value.remove(0, 2);                                           // trim opening quote and cr from raw literal
-  Return_value.remove(Return_value.length() - 2);                      // trim closing quote from raw literal
+  HomePage.remove(0, 2);                                       // trim opening quote and cr from raw literal
+  HomePage.remove(HomePage.length() - 2);                      // trim closing quote from raw literal
 
-  Return_value.replace("btn*1", BUTTON_1_LABEL);
-  Return_value.replace("btn*2", BUTTON_2_LABEL);
-  Return_value.replace("btn*3", BUTTON_3_LABEL);
-  Return_value.replace("btn*4", BUTTON_4_LABEL);
+  HomePage.replace("btn*1", BUTTON_1_LABEL);
+  HomePage.replace("btn*2", BUTTON_2_LABEL);
+  HomePage.replace("btn*3", BUTTON_3_LABEL);
+  HomePage.replace("btn*4", BUTTON_4_LABEL);
 
-  Return_value.replace("value*1", ConvertForWebDisplay(Button_1_text));
-  Return_value.replace("value*2", ConvertForWebDisplay(Button_2_text));
-  Return_value.replace("value*3", ConvertForWebDisplay(Button_3_text));
-  Return_value.replace("value*4", ConvertForWebDisplay(Button_4_text));
-
-  Serial.println(Return_value);
-
-  return Return_value;
+  HomePage.replace("value*1", ConvertForWebDisplay(Button_1_text));
+  HomePage.replace("value*2", ConvertForWebDisplay(Button_2_text));
+  HomePage.replace("value*3", ConvertForWebDisplay(Button_3_text));
+  HomePage.replace("value*4", ConvertForWebDisplay(Button_4_text));
 
 }
 
@@ -1051,9 +1060,16 @@ void HandleNotFound() {
 void LoadWebpage() {
 
   server.on("/", HTTP_GET, []() {
-
+    
+    // this code gets executed only once the webpage's url is entered into the browser
+    
     server.sendHeader("Connection", "close");
-    server.send(200, "text/html", UpdateHomePageWithCurrentButtonValues());
+    server.send(200, "text/html", HomePage);
+
+    // before this could be run the bleKeyboard needed to be ended to free up memory
+    // however, now that the page is loaded, the bleKeyboard will be turned back on
+    
+    bleKeyboard.begin();
 
   });
 
@@ -1493,16 +1509,13 @@ void StartWebpageInterface() {
 
   if (SetupWiFi()) {
 
+    LoadWebpage();
+    delay(1500);
+
     // fast flash the LED six times to indicate a successful WiFi connection
     FlashLED(LED_UPDATE_BUTTONS_PIN, 6, 250);
 
-    LoadWebpage();
-    delay(2);  
-    server.handleClient();
-    delay(2);  
-        
-    // open the server address in a browser
-
+    // open the webpage by typing the server's address in the browser
     String Open_server_command = "";
 
     if (WORKING_WITH_WINDOWS10)
@@ -1510,11 +1523,22 @@ void StartWebpageInterface() {
 
     Open_server_command.concat("http://");
     Open_server_command.concat(IP_Address_of_this_client);
-    Open_server_command.concat("/{!1}{Enter}");
+    Open_server_command.concat("{Enter}");
 
     TypeText(Open_server_command);
+
+    // Now that the webpage info has been typed into the browser the bleKeyboard needs to be turned off so as to release needed 
+    // memory which is required to in turn present the Webpage.
+    //
+    // For more information, please see the LoadWebpage subroutine above.
+    //
+    // Of note, once the webpage is presented in the browser, the code in the LoadWebpage routine will restart the bleKeyboard 
+    // but for now, it needs to be turned off
     
-    // turn on the LED to indicate the program is awaiting a web page update
+    bleKeyboard.end();
+    
+  
+    // turn on the LED to indicate the program ready to open the webpage
     UpdateLED(LED_UPDATE_BUTTONS_PIN, true);
 
     // allows the user to press a button on the remote to have its current value keyed into any field on the web interface
@@ -1595,7 +1619,7 @@ void HandlePairRemoteButtonPressed() {
 
       SendResetSequenceTo1527Board();
 
-      delay(500);                                                   // take a short break and then
+      delay(500);                                                    // take a short break and then
       FlashLED(LED_PAIR_REMOTE_PIN, 6, 250);                         // fast the led six times to indicate success
 
     } else {
@@ -1615,7 +1639,7 @@ void HandlePairRemoteButtonPressed() {
 void SetupSerial() {
 
   Serial.begin(115200);
-  Serial.println("Blue Key Remote v2.1 starting");
+  Serial.println("Blue Key Remote v2.2 starting");
   Serial.println("Copyright, Rob Latour, 2021");
   Serial.println("");
 
@@ -1649,16 +1673,22 @@ void setup() {
 
   SetupSerial();
 
-  SetupEEPROM(false);
-
   SetupESP32Pins();
 
-  Number_Of_Extended_Key_Codes = sizeof(Extend_Key_Codes) / sizeof(Extend_Key_Codes[0]);
+  SetupEEPROM(false);
 
+  SetupHomePageWithCurrentButtonValues();
+
+  Number_Of_Extended_Key_Codes = sizeof(Extend_Key_Codes) / sizeof(Extend_Key_Codes[0]);
   // Serial.print("Number of extended key codes: "); Serial.println(Number_Of_Extended_Key_Codes);
 
   // start bluetooth
   bleKeyboard.begin();
+
+  // Toggle control board end lights on and off to show that setup is complete
+  ToggleEndLEDSOnThenOff();
+
+  Serial.println("Setup complete");
 
 }
 

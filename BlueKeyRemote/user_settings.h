@@ -21,7 +21,7 @@
 
 #define BLUETOOTH_DEVICE_NAME                                          "Blue Key Remote"                        // change this if you like
 
-#define MILLISECONDS_DELAY_BETWEEN_KEYSTROKES                          10                                       // default value of 10 milliseconds   = 1/100 of a second
+#define MILLISECONDS_DELAY_BETWEEN_KEYSTROKES                          20                                       // default value of 10 milliseconds   = 1/100 of a second
 
 #define HOLD_PAIRING_BUTTON_FOR_THIS_MANY_MILLISECONDS_BEFORE_PAIRING  5000                                     // default value of 5000 milliseconds = 5 seconds
 
